@@ -98,7 +98,7 @@ FaceDetector::FaceDetector(){
 
 cv::Rect FaceDetector::detectFromImage(cv::Mat &image, cv::Mat &rot){
     // add borders for rotating the image
-    Mat borderImg = Mat::zeros(700,640,CV_8UC3);
+    Mat borderImg = Mat::zeros(800,700,CV_8UC3);
     image.copyTo(borderImg(Rect(80,30,image.cols,image.rows)));
 
 
@@ -123,10 +123,22 @@ cv::Rect FaceDetector::detectFromImage(cv::Mat &image, cv::Mat &rot){
     // resultedRects from detectAll
     Rect faceRect = this->avgOf2(this->avgRect(this->resultedRects), this->medianRect(this->resultedRects));
 
+
+
     // copy rotation matrix
     rot_mat.copyTo(rot);
 
     // make cut of the face
+    // extend FaceRect
+
+    int height = faceRect.height*0.3;
+    int width = faceRect.width*0.1;
+
+    faceRect.height = (faceRect.height + height) > mImage.rows ? mImage.rows : faceRect.height + height;
+    faceRect.width = (faceRect.width + width) > mImage.cols ? mImage.cols : faceRect.width + width;
+    faceRect.y = (faceRect.y - height) < 0 ? 0 : faceRect.y - height;
+    faceRect.x = (faceRect.x - width) < 0 ? 0 : faceRect.x - width;
+
     mImage(faceRect).copyTo(this->cropped_img);
 
     //Draw the results
