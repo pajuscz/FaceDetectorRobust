@@ -13,8 +13,8 @@
 
 #include <opencv/highgui.h>
 
-#include "../../lib/support/lib_src/cvSupport.h"
-#include "../../lib/support/lib_src/support.h"
+#include "lib_src/cvSupport.h"
+#include "lib_src/support.h"
 
 using namespace cv;
 using namespace std;
@@ -29,6 +29,8 @@ public:
     virtual void detection() = 0;
 
     void setImage(Mat &image);
+
+    cv::Mat getImg();
 
     Mat getGrayImg();
 
@@ -74,16 +76,23 @@ public:
     int detect2Rotate(vector<Rect> &faces, int * angle, int * diff = NULL);
 
 
-    void detection1();
-
-    void rotator(int boundValue);
     vector<Rect> resultedRects;
+
+
+    cv::Mat getCroppedImg();
+
+    /*
+     * Saves cropped face rectangle
+     * @return -1 on fail
+     */
+    int saveCroppedFace(string filename);
 
 private:
 
+    cv::Mat cropped_img;
+
     Size approxMinSize();
 
-    void deeperRotator(int resultLeft, int resultRight, int left, int right);
 
     void saveResult(vector<Rect> & faces, int angle);
 
