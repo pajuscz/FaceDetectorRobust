@@ -67,7 +67,7 @@ void showStasm(float *stasmLandmarks, string name, Mat & img){
     imshow(name,model);
 }
 
-cv::Mat cutObject(Mat & _img, DoublePoint & object, int bbox){
+cv::Mat cutObject(Mat & _img, DoublePoint & object, int bbox, int bboxup = 0){
     // copy of the image
     Mat img;
     _img.copyTo(img);
@@ -85,6 +85,21 @@ cv::Mat cutObject(Mat & _img, DoublePoint & object, int bbox){
 
     double d = bbox;
 
+    if(bboxup != 0){
+        double dd = bboxup;
+        //check if points are in the image !!!
+        if(org.x-d < 0 || org.x-d > img.cols || org.y-dd < 0 || org.y-dd > img.rows
+                || end.x+dd < 0 || end.y+dd < 0 || end.y+d > img.rows || end.x+d > img.cols){
+            cout << "Point out of bounds: " << endl;
+        }
+        else{
+            cv::Rect rect(Point(org.x - d, org.y - dd),
+                          Point(end.x + d, end.y + dd));
+            cv::Mat img_rect = cv::Mat(img,rect);
+
+            return img_rect;
+        }
+    }
     //check if points are in the image !!!
     if(org.x-d < 0 || org.x-d > img.cols || org.y-d < 0 || org.y-d > img.rows
             || end.x+d < 0 || end.y+d < 0 || end.y+d > img.rows || end.x+d > img.cols){
@@ -134,7 +149,7 @@ void performStasm(cv::Mat img, string anot){
         // load face from stasm
         FaceState found = getStasmPoints(stasmLandmarks,img);
 
-        Mat mouth = cutObject(img,found.mouth, found.mouth.distance()/2);
+        Mat mouth = cutObject(img,found.mouth, found.mouth.distance()/5, found.mouth.distance()/3 + 5);
         Mat leye = cutObject(img,found.lEye, found.lEye.distance()/2);
         Mat reye = cutObject(img,found.rEye, found.rEye.distance()/2);
 
@@ -144,18 +159,18 @@ void performStasm(cv::Mat img, string anot){
         string mouthPath = MOUTHS+Support::getFileName(anot) + "_M_" + fs.mouth.getStrState() + ".jpg";
 
         if(!boost::filesystem::is_directory(EYES)){
-            boost::filesystem::create_directory(EYES);
+            boost::filesystem::create_directories(EYES);
         }
         if(!boost::filesystem::is_directory(MOUTHS)){
-            boost::filesystem::create_directory(MOUTHS);
+            boost::filesystem::create_directories(MOUTHS);
         }
 
-        if(!boost::filesystem::exists(lEyePath.c_str()) && !boost::filesystem::exists(rEyePath.c_str()) && !boost::filesystem::exists(mouthPath.c_str())){
+        //if(!boost::filesystem::exists(lEyePath.c_str()) && !boost::filesystem::exists(rEyePath.c_str()) && !boost::filesystem::exists(mouthPath.c_str())){
                 imwrite(lEyePath,leye);
                 imwrite(rEyePath,reye);
                 imwrite(mouthPath,mouth);
                 cout << "saving: " << lEyePath << ", " << rEyePath << ", " << mouthPath << endl;
-            }
+        //    }
 
     }
     else{
@@ -189,8 +204,8 @@ int main(int argc, char ** argv)
                 // STASM
                 performStasm(face, anots[i]);
 
-                imshow(Support::getFilePath(images[i]), face);
-                cvSupport::indexBrowser(i,images.size());
+               // imshow(Support::getFilePath(images[i]), face);
+               // cvSupport::indexBrowser(i,images.size());
 
               //  fd->saveCroppedFace(Support::getFilePath(images[i]) + Support::getFileName(images[i])+"_face.jpg");
          }
