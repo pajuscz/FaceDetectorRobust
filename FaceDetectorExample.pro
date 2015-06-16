@@ -31,7 +31,8 @@ SOURCES += main.cpp \
     lib_stasm/classicdesc.cpp \
     lib_stasm/asm.cpp \
     lib_stasm/MOD_1/initasm.cpp \
-    lib_stasm/MOD_1/facedet.cpp
+    lib_stasm/MOD_1/facedet.cpp \
+    faceDesc/facedescription.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
@@ -49,8 +50,9 @@ LIBS += -L/usr/local/lib \
 -lopencv_objdetect \
 -lopencv_contrib \
 -lopencv_legacy \
--lopencv_flann
-
+-lopencv_flann \
+-lboost_system \
+-lboost_filesystem
 HEADERS += \
     detector.h \
     lib_src/cvSupport.h \
@@ -83,5 +85,6 @@ HEADERS += \
     lib_stasm/atface.h \
     lib_stasm/asm.h \
     lib_stasm/MOD_1/initasm.h \
-    lib_stasm/MOD_1/facedet.h
+    lib_stasm/MOD_1/facedet.h \
+    faceDesc/facedescription.h
 

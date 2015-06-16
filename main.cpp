@@ -7,33 +7,35 @@
 
 #include <opencv/highgui.h>
 
+#include <boost/filesystem.hpp>
+
 #include "detector.h"
 
 #include "libflandmark/flandmark_detector.h"
 
 #include "lib_stasm/stasm_lib.h"
 #include "lib_stasm/stasm_landmarks.h"
+
+#include "faceDesc/facedescription.h"
+
 using namespace std;
 
 cv::Point get_point_landmark(int index, float * landmarks){
     return cv::Point(landmarks[index*2],landmarks[index*2+1]);
 }
 
-void performStasm(cv::Mat img, string name){
-    cv::Mat_<unsigned char> img_gray;
-    cvtColor(img,img_gray,CV_BGR2GRAY);
 
+void saveMouth(){
 
-    int foundface;
-    float stasmLandmarks[2 * stasm_NLANDMARKS]; // x,y coordinates
+}
 
+void saveEyes(){
 
-    if(!stasm_search_single(&foundface, stasmLandmarks, (char*)img_gray.data, img_gray.cols, img_gray.rows, "", "./lib_stasm/haars/")){
-        cerr << "Error in stasm_search_single: " << stasm_lasterr() << endl;
-    }
+}
 
-    Mat model;
-        img_gray.copyTo(model);
+void showStasm(float *stasmLandmarks, string name, Mat & img){
+        Mat model;
+        img.copyTo(model);
 
         // Jaw
         for(int i = 0; i < 12; ++i){
@@ -65,6 +67,102 @@ void performStasm(cv::Mat img, string name){
     imshow(name,model);
 }
 
+cv::Mat cutObject(Mat & _img, DoublePoint & object, int bbox){
+    // copy of the image
+    Mat img;
+    _img.copyTo(img);
+
+    // find the rotation angle
+    double angle = cvSupport::angleBottom(object.getLPoint(), object.getRPoint());
+    // rotate the image
+    Mat rotM = cvSupport::rotateImg(img,angle,object.getCenter());
+
+    object.rotate(rotM);
+
+    cv::Point org = cv::Point(object.getLPoint());
+    cv::Point end = cv::Point(object.getRPoint());
+
+
+    double d = bbox;
+
+    //check if points are in the image !!!
+    if(org.x-d < 0 || org.x-d > img.cols || org.y-d < 0 || org.y-d > img.rows
+            || end.x+d < 0 || end.y+d < 0 || end.y+d > img.rows || end.x+d > img.cols){
+        cout << "Point out of bounds: " << endl;
+    }
+    else{
+        cv::Rect rect(Point(org.x - d, org.y - d),
+                      Point(end.x + d, end.y + d));
+        cv::Mat img_rect = cv::Mat(img,rect);
+
+        return img_rect;
+    }
+    return Mat();
+}
+
+
+FaceState getStasmPoints(float * landmarks, cv::Mat & img){
+    DoublePoint mouth(get_point_landmark(L_LMouthCorner,landmarks), get_point_landmark(L_RMouthCorner,landmarks));
+    DoublePoint lEye(get_point_landmark(L_LEyeOuter,landmarks), get_point_landmark(L_LEyeInner,landmarks));
+    DoublePoint rEye(get_point_landmark(L_REyeInner,landmarks), get_point_landmark(L_REyeOuter,landmarks));
+
+    FaceState newFs(Eye(lEye.getLPoint(),lEye.getRPoint()),
+                    Eye(rEye.getLPoint(),rEye.getRPoint()),
+                    MouthSimple(mouth.getLPoint(), mouth.getRPoint()));
+    return newFs;
+}
+
+
+#define MOUTHS "OUT/Mouths/"
+#define EYES "OUT/Eyes/"
+
+void performStasm(cv::Mat img, string anot){
+    cv::Mat_<unsigned char> img_gray;
+    cvtColor(img,img_gray,CV_BGR2GRAY);
+
+
+    int foundface;
+    float stasmLandmarks[2 * stasm_NLANDMARKS]; // x,y coordinates
+
+    if(!stasm_search_single(&foundface, stasmLandmarks, (char*)img_gray.data, img_gray.cols, img_gray.rows, "", "./lib_stasm/haars/")){
+        cerr << "Error in stasm_search_single: " << stasm_lasterr() << endl;
+    }
+    if(foundface > 0){
+        // Load anot file to get states
+        FaceState fs;
+        fs.openFromFile(anot);
+        // load face from stasm
+        FaceState found = getStasmPoints(stasmLandmarks,img);
+
+        Mat mouth = cutObject(img,found.mouth, found.mouth.distance()/2);
+        Mat leye = cutObject(img,found.lEye, found.lEye.distance()/2);
+        Mat reye = cutObject(img,found.rEye, found.rEye.distance()/2);
+
+        //SAVING
+        string lEyePath = EYES+Support::getFileName(anot) + "_LE_" + fs.lEye.state() + ".jpg";
+        string rEyePath = EYES+Support::getFileName(anot) + "_RE_" + fs.rEye.state() + ".jpg";
+        string mouthPath = MOUTHS+Support::getFileName(anot) + "_M_" + fs.mouth.getStrState() + ".jpg";
+
+        if(!boost::filesystem::is_directory(EYES)){
+            boost::filesystem::create_directory(EYES);
+        }
+        if(!boost::filesystem::is_directory(MOUTHS)){
+            boost::filesystem::create_directory(MOUTHS);
+        }
+
+        if(!boost::filesystem::exists(lEyePath.c_str()) && !boost::filesystem::exists(rEyePath.c_str()) && !boost::filesystem::exists(mouthPath.c_str())){
+                imwrite(lEyePath,leye);
+                imwrite(rEyePath,reye);
+                imwrite(mouthPath,mouth);
+                cout << "saving: " << lEyePath << ", " << rEyePath << ", " << mouthPath << endl;
+            }
+
+    }
+    else{
+        cerr << anot << " No faces found" << endl;
+    }
+}
+
 int main(int argc, char ** argv)
 {
 
@@ -73,7 +171,10 @@ int main(int argc, char ** argv)
       **/
     if(argc > 1){
         vector<string> images = Support::pathVector(argv[1],".jpg");
-        cout << argv[1] << endl;
+        vector<string> anots = Support::pathVector(argv[1],".txt");
+
+        sort(images.begin(), images.end());
+        sort(anots.begin(), anots.end());
         //Init face detector
         FaceDetector *fd = new FaceDetector();
 
@@ -85,34 +186,8 @@ int main(int argc, char ** argv)
                 Rect  faceRect = fd->detectFromImage(img,rot);
                 cv::Mat face = fd->getImg();
 
-                // LOAD FLANDMARK
-                FLANDMARK_Model * fModel = flandmark_init("./libflandmark/flandmark_model.dat");
-                // load input image
-
-                IplImage *iplimg = new IplImage(face);
-
-                cout << faceRect << endl;
-                // convert image to grayscale
-                IplImage *img_grayscale = cvCreateImage(cvSize(iplimg->width, iplimg->height), IPL_DEPTH_8U, 1);
-                cvCvtColor(iplimg, img_grayscale, CV_BGR2GRAY);
-                // bbox with detected face (format: top_left_col top_left_row bottom_right_col bottom_right_row)
-                int bbox[] = {faceRect.tl().x, faceRect.tl().y, faceRect.br().x, faceRect.br().y};
-                // detect facial landmarks (output are x, y coordinates of detected landmarks)
-                double * landmarks = (double*)malloc(2*fModel->data.options.M*sizeof(double));
-                flandmark_detect(img_grayscale, bbox, fModel, landmarks);
-
-                cout << landmarks[0] << endl;
-
-                Mat imgfl;
-                fd->getCroppedImg().copyTo(imgfl);
-                for(int i = 0; i < fModel->data.options.M*2;i+=2){
-                    circle(imgfl, Point(landmarks[i] - faceRect.tl().x, landmarks[i+1] - faceRect.tl().y),2,Scalar(0,0,255),2);
-                }
-                imshow("imgfl",imgfl);
-
                 // STASM
-                performStasm(face,"full");
-                performStasm(fd->getCroppedImg(),"face");
+                performStasm(face, anots[i]);
 
                 imshow(Support::getFilePath(images[i]), face);
                 cvSupport::indexBrowser(i,images.size());

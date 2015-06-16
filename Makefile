@@ -36,7 +36,7 @@ DISTNAME      = FaceDetectorExample1.0.0
 DISTDIR = /home/pajus/Development/FaceDetect/FaceDetectorExample/.tmp/FaceDetectorExample1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-rpath,/home/pajus/dev/Qt/5.4/gcc_64
-LIBS          = $(SUBLIBS) -L/usr/local/lib -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann 
+LIBS          = $(SUBLIBS) -L/usr/local/lib -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_contrib -lopencv_legacy -lopencv_flann -lboost_system -lboost_filesystem 
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -74,7 +74,8 @@ SOURCES       = main.cpp \
 		lib_stasm/classicdesc.cpp \
 		lib_stasm/asm.cpp \
 		lib_stasm/MOD_1/initasm.cpp \
-		lib_stasm/MOD_1/facedet.cpp 
+		lib_stasm/MOD_1/facedet.cpp \
+		faceDesc/facedescription.cpp 
 OBJECTS       = main.o \
 		detector.o \
 		cvSupport.o \
@@ -101,7 +102,8 @@ OBJECTS       = main.o \
 		classicdesc.o \
 		asm.o \
 		initasm.o \
-		facedet.o
+		facedet.o \
+		facedescription.o
 DIST          = ../../../dev/Qt/5.4/gcc_64/mkspecs/features/spec_pre.prf \
 		../../../dev/Qt/5.4/gcc_64/mkspecs/common/shell-unix.conf \
 		../../../dev/Qt/5.4/gcc_64/mkspecs/common/unix.conf \
@@ -248,7 +250,8 @@ DIST          = ../../../dev/Qt/5.4/gcc_64/mkspecs/features/spec_pre.prf \
 		lib_stasm/atface.h \
 		lib_stasm/asm.h \
 		lib_stasm/MOD_1/initasm.h \
-		lib_stasm/MOD_1/facedet.h main.cpp \
+		lib_stasm/MOD_1/facedet.h \
+		faceDesc/facedescription.h main.cpp \
 		detector.cpp \
 		lib_src/cvSupport.cpp \
 		lib_src/support.cpp \
@@ -274,7 +277,8 @@ DIST          = ../../../dev/Qt/5.4/gcc_64/mkspecs/features/spec_pre.prf \
 		lib_stasm/classicdesc.cpp \
 		lib_stasm/asm.cpp \
 		lib_stasm/MOD_1/initasm.cpp \
-		lib_stasm/MOD_1/facedet.cpp
+		lib_stasm/MOD_1/facedet.cpp \
+		faceDesc/facedescription.cpp
 QMAKE_TARGET  = FaceDetectorExample
 DESTDIR       = #avoid trailing-slash linebreak
 TARGET        = FaceDetectorExample
@@ -643,7 +647,10 @@ main.o: main.cpp lib_src/cvSupport.h \
 		/usr/local/include/opencv2/legacy/blobtrack.hpp \
 		/usr/local/include/opencv2/contrib/contrib.hpp \
 		/usr/local/include/opencv2/contrib/retina.hpp \
-		/usr/local/include/opencv2/contrib/openfabmap.hpp
+		/usr/local/include/opencv2/contrib/openfabmap.hpp \
+		lib_stasm/stasm_lib.h \
+		lib_stasm/stasm_landmarks.h \
+		faceDesc/facedescription.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 detector.o: detector.cpp detector.h \
@@ -2757,6 +2764,21 @@ facedet.o: lib_stasm/MOD_1/facedet.cpp lib_stasm/stasm.h \
 		lib_stasm/shape17.h \
 		lib_stasm/startshape.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o facedet.o lib_stasm/MOD_1/facedet.cpp
+
+facedescription.o: faceDesc/facedescription.cpp faceDesc/facedescription.h \
+		/usr/local/include/opencv2/core/core.hpp \
+		/usr/local/include/opencv2/core/types_c.h \
+		/usr/local/include/opencv2/core/version.hpp \
+		/usr/local/include/opencv2/core/operations.hpp \
+		/usr/local/include/opencv2/core/mat.hpp \
+		/usr/local/include/opencv2/highgui/highgui.hpp \
+		/usr/local/include/opencv2/highgui/highgui_c.h \
+		/usr/local/include/opencv2/core/core_c.h \
+		/usr/local/include/opencv2/imgproc/imgproc.hpp \
+		/usr/local/include/opencv2/imgproc/types_c.h \
+		lib_src/cvSupport.h \
+		lib_src/support.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o facedescription.o faceDesc/facedescription.cpp
 
 ####### Install
 
