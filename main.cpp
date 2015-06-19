@@ -11,7 +11,6 @@
 
 #include "detector.h"
 
-#include "libflandmark/flandmark_detector.h"
 
 #include "lib_stasm/stasm_lib.h"
 #include "lib_stasm/stasm_landmarks.h"

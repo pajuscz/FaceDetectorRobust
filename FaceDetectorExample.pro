@@ -9,8 +9,6 @@ SOURCES += main.cpp \
     detector.cpp \
     lib_src/cvSupport.cpp \
     lib_src/support.cpp \
-    libflandmark/liblbp.cpp \
-    libflandmark/flandmark_detector.cpp \
     lib_stasm/stasm_lib.cpp \
     lib_stasm/stasm.cpp \
     lib_stasm/startshape.cpp \
@@ -57,9 +55,6 @@ HEADERS += \
     detector.h \
     lib_src/cvSupport.h \
     lib_src/support.h \
-    libflandmark/msvc-compat.h \
-    libflandmark/liblbp.h \
-    libflandmark/flandmark_detector.h \
     lib_stasm/stasm_landmarks.h \
     lib_stasm/stasm.h \
     lib_stasm/stasm_lib_ext.h \
