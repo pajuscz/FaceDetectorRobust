@@ -20,7 +20,7 @@ void FaceDet::OpenFaceDetector_( // called by stasm_init, init face det from XML
     void*)                       // in: unused (func signature compatibility)
 {
 
-    OpenDetector(facedet_g, "haarcascade_frontalface_alt2.xml",  datadirs);
+    OpenDetector(facedet_g, "haarcascade_frontalface_alt2.xml",  datadir);
 }
 
 // If a face is near the edge of the image, the OpenCV detectors tend to

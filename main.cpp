@@ -148,7 +148,7 @@ void performStasm(cv::Mat img, string anot){
         // load face from stasm
         FaceState found = getStasmPoints(stasmLandmarks,img);
 
-        Mat mouth = cutObject(img,found.mouth, found.mouth.distance()/5, found.mouth.distance()/3 + 5);
+        Mat mouth = cutObject(img,found.mouth, found.mouth.distance()/5, found.mouth.distance()/3 + found.mouth.distance()/6);
         Mat leye = cutObject(img,found.lEye, found.lEye.distance()/2.5);
         Mat reye = cutObject(img,found.rEye, found.rEye.distance()/2.5);
 
